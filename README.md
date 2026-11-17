@@ -9,7 +9,7 @@ The STEPS-Tutor API provides:
 - [capability 3],
 - [capability 4].
 
-Built on [REST/GraphQL] with [authentication method, e.g. API keys over HTTPS] and JSON request/response bodies.
+Built on REST with [authentication method, e.g. API keys over HTTPS] and JSON request/response bodies.
 
 ## Table Of Contents
 
