@@ -170,7 +170,7 @@ When you open an issue, prefix the title with `[Bug]`, `[Question]`, or `[Featur
 
 ## Contributing
 
-We welcome feedback through GitHub Issues. **We do not accept pull requests from outside contributors**, and pull requests are turned off for this repository.
+We welcome feedback through GitHub Issues. We are currently not accepting pull requests from outside contributors, and pull requests are turned off for this repository.
 
 You can contribute by:
 1. Reporting bugs
