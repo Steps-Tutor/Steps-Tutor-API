@@ -1,15 +1,13 @@
 # STEPS-Tutor API
 
-<!-- TODO: Replace with a one-sentence description of what the API lets developers do. -->
-The STEPS-Tutor API gives developers programmatic access to [STEPS](https://steps.stanford.edu/) (Science Tutor for Effective Problem Solving), a Stanford platform that helps STEM students build problem-solving skills.
+Open-source API for bringing [STEPS](https://steps.stanford.edu/) (Science Tutor for Effective Problem Solving) tutoring into your own courses and learning platforms.
 
-The STEPS-Tutor API provides:
-- [capability 1],
-- [capability 2],
-- [capability 3],
-- [capability 4].
+The STEPS-Tutor API supports:
+- running STEPS tutoring sessions from your own tools,
+- creating, adapting and managing problems,
+- self-hosting with your own OpenAI API key.
 
-Built on REST with [authentication method, e.g. API keys over HTTPS] and JSON request/response bodies.
+Built with Node.js and TypeScript. You run it on your own machine or server, either directly or with Docker.
 
 ## Table Of Contents
 
@@ -17,169 +15,152 @@ Built on REST with [authentication method, e.g. API keys over HTTPS] and JSON re
 - [Core Features](#core-features)
 - [How It Works](#how-it-works)
 - [Prerequisites](#prerequisites)
-- [Getting Access](#getting-access)
-- [Quick Start](#quick-start)
-- [Authentication](#authentication)
+- [Environment Variables](#environment-variables)
+- [Running With Docker](#running-with-docker)
+- [Running Locally](#running-locally)
 - [Endpoints Overview](#endpoints-overview)
-- [Rate Limits](#rate-limits)
 - [Errors](#errors)
-- [Versioning](#versioning)
+- [Data And Privacy](#data-and-privacy)
 - [Troubleshooting](#troubleshooting)
 - [Getting Help](#getting-help)
 - [Contributing](#contributing)
 - [Security](#security)
+- [Roadmap](#roadmap)
 - [License](#license)
 
 ## Why STEPS-Tutor API
 
-[STEPS](https://steps.stanford.edu/) is a Stanford University platform from the Ideal Learning Lab. Its tutor guides students through planning, checking and reflecting on their solutions, so they learn how to solve problems rather than just reach the right answer. Instructors can create, adapt and assign real-world problems, and share them through public problem libraries.
+[STEPS](https://steps.stanford.edu/) is a Stanford University platform from the Ideal Learning Lab. Its tutor guides students through planning, checking and reflecting on their solutions, so they learn how to solve problems rather than just reach the right answer.
 
-The STEPS-Tutor API is designed for [target users, e.g. course platforms, researchers, educational tool builders] who need a reliable way to:
-- [goal 1],
-- [goal 2],
-- [goal 3].
+The STEPS-Tutor API is designed for:
+- **Instructors and course teams** who want STEPS-style tutoring inside their own course materials or tools,
+- **LMS and ed-tech platforms** that want to offer STEPS tutoring to their users.
 
-<!-- TODO: One or two sentences on why the API exists, e.g. bringing STEPS tutoring into an existing LMS or course tool. -->
-[Why the API exists and what it makes possible beyond the STEPS web app.]
+<!-- TODO: Add a sentence or two on why the API exists, e.g. what it makes possible beyond the STEPS web app. -->
 
 Learn more about the STEPS project at **https://steps.stanford.edu/**.
 
 ## Core Features
 
-<!-- TODO: Replace with the API's real feature areas. -->
+<!-- TODO (dev team): Fill in specifics and endpoint names for each area. -->
 
-- **[Feature area 1]**
-  - [What it does]
-  - [Key endpoint or capability]
+- **Tutoring sessions**
+  - [Send a student's work and receive STEPS guidance on planning, checking and reflecting]
+  - [Key endpoint(s)]
 
-- **[Feature area 2]**
-  - [What it does]
-  - [Key endpoint or capability]
+- **Problem management**
+  - [Create, adapt and retrieve problems]
+  - [Key endpoint(s)]
 
-- **[Feature area 3]**
-  - [What it does]
-  - [Key endpoint or capability]
+- **Bring your own OpenAI key**
+  - The API uses your OpenAI key to process requests, so you control your own usage and costs.
 
 ## How It Works
 
-- **Base URL**: `[https://api.example.com/v1]`
-- **Protocol**: HTTPS only
-- **Format**: JSON request and response bodies (`Content-Type: application/json`)
-- **Auth**: [API key in the `Authorization` header]
-- **Pagination**: [e.g. cursor-based using `cursor` and `limit` query parameters]
+- You download this repository and run the API yourself.
+- The API needs no API key or account of its own.
+- Requests that need AI processing are sent to OpenAI using **your** OpenAI API key, which you set in a `.env` file.
+- Nothing is stored by the API itself; it only needs your OpenAI key to run.
+
+<!-- TODO (dev team): Confirm the default port and request format. -->
+- **Default address**: `http://localhost:[PORT]`
+- **Format**: JSON request and response bodies
 
 ## Prerequisites
 
-Before using the API, you need:
+Before running the API, make sure you have:
 
-- A STEPS account [or other access requirement]
-- An API key (see [Getting Access](#getting-access))
-- An HTTP client (curl, Postman, or any language's HTTP library)
+- An OpenAI API key ([OpenAI account](https://platform.openai.com/) with billing set up)
+- **For Docker:** [Docker](https://www.docker.com/) [and Docker Compose]
+- **To run directly:** Node.js [version] or later, and npm [version] or later
 
-## Getting Access
+## Environment Variables
 
-1. [Sign up / request access at `[URL]`]
-2. [Generate an API key from `[dashboard location]`]
-3. Store the key securely, for example in an environment variable. Never commit it to source control or paste it into a GitHub issue.
-
-## Quick Start
-
-Set your key:
+Copy the example file and fill in your values:
 
 ```bash
-export STEPS_API_KEY="your-api-key"
+cp .env.example .env
 ```
 
-Make your first request:
+<!-- TODO (dev team): List every variable the API reads, and mark which are required. -->
 
 ```bash
-curl -H "Authorization: Bearer $STEPS_API_KEY" \
-  [https://api.example.com/v1/endpoint]
+# Required: used to process requests through OpenAI
+OPENAI_API_KEY="sk-..."
+
+# [Other variables, e.g. PORT, model name, log level]
 ```
 
-Example response:
+Never commit your `.env` file or share your OpenAI key in a GitHub issue.
 
-```json
-{
-  "id": "[example-id]",
-  "status": "ok"
-}
+## Running With Docker
+
+<!-- TODO (dev team): Confirm commands. -->
+
+```bash
+git clone [REPO_URL]
+cd [REPO_FOLDER]
+cp .env.example .env   # then add your OpenAI key
+[docker compose up]
 ```
 
-## Authentication
+The API will be available at `http://localhost:[PORT]`.
 
-All requests must include your API key:
+## Running Locally
 
-```http
-Authorization: Bearer <STEPS_API_KEY>
+<!-- TODO (dev team): Confirm commands and script names. -->
+
+1) Install dependencies
+
+```bash
+npm install
 ```
 
-- Requests without a valid key return `401 Unauthorized`.
-- Requests for resources your key cannot access return `403 Forbidden`.
-- If you think a key has been exposed, [revoke and regenerate it at `[location]`] immediately.
+2) Set up your `.env` file (see [Environment Variables](#environment-variables))
+
+3) Start the API
+
+```bash
+[npm run dev]     # development
+[npm run build]   # build for production
+[npm start]       # run the production build
+```
 
 ## Endpoints Overview
 
-<!-- TODO: Replace with real endpoints. -->
+<!-- TODO (dev team): Replace with real endpoints. -->
 
 | Method | Endpoint | Description |
 | ------ | -------- | ----------- |
-| `GET`  | `/v1/[resource]` | [List resources] |
-| `GET`  | `/v1/[resource]/{id}` | [Get a single resource] |
-| `POST` | `/v1/[resource]` | [Create a resource] |
+| `[METHOD]` | `[/endpoint]` | [Start or continue a tutoring session] |
+| `[METHOD]` | `[/endpoint]` | [Create or update a problem] |
+| `[METHOD]` | `[/endpoint]` | [Get a problem] |
 
-Full reference documentation: [link to API docs]
-
-## Rate Limits
-
-- [N] requests per [minute] per API key
-- Exceeding the limit returns `429 Too Many Requests`
-- Check the `[Retry-After]` header to see when to retry
+[Link to full endpoint documentation, if any]
 
 ## Errors
 
-Errors use standard HTTP status codes and a JSON body:
+<!-- TODO (dev team): Describe the error format and common error codes. -->
 
-```json
-{
-  "error": {
-    "code": "[error_code]",
-    "message": "[Human-readable description]",
-    "request_id": "[req_123]"
-  }
-}
-```
+[How errors are returned, e.g. status codes and response body format.]
 
-| Status | Meaning |
-| ------ | ------- |
-| `400` | Invalid request (check parameters and body) |
-| `401` | Missing or invalid API key |
-| `403` | Key lacks permission for this resource |
-| `404` | Resource not found |
-| `429` | Rate limit exceeded |
-| `5xx` | Server error (safe to retry with backoff) |
+## Data And Privacy
 
-Include the `request_id` when reporting a problem; it helps us find your request quickly.
-
-## Versioning
-
-- The API version is part of the URL (e.g. `/v1/`).
-- Non-breaking changes (new fields, new endpoints) may be added to the current version at any time.
-- Breaking changes are released as a new version, with at least [N months] notice before an old version is retired.
+- The STEPS-Tutor API does not store data.
+- Student work sent to the API is passed to OpenAI using your key, so OpenAI's data and usage policies apply. Check that this fits your institution's privacy requirements (for example, rules on student records) before using it with real student data.
 
 ## Troubleshooting
 
-- **`401 Unauthorized`**
-  - Check the key is correct, active, and sent as `Authorization: Bearer <STEPS_API_KEY>`.
+<!-- TODO (dev team): Add common problems as they come up. -->
 
-- **`429 Too Many Requests`**
-  - Slow down, respect `Retry-After`, and retry with exponential backoff.
+- **The API won't start**
+  - Check that `.env` exists and that `OPENAI_API_KEY` is set.
 
-- **Unexpected `5xx` errors**
-  - Retry with backoff. If they persist, [check the status page at `[URL]`] and open a bug report.
+- **Errors mentioning OpenAI authentication**
+  - Check that your OpenAI key is valid and that billing is set up on your OpenAI account.
 
-- **Response doesn't match the docs**
-  - Confirm you are calling the right API version, then open a bug report.
+- **Rate limit or quota errors**
+  - These come from your OpenAI account's limits. Check your usage and limits in the OpenAI dashboard.
 
 ## Getting Help
 
@@ -189,31 +170,38 @@ When you open an issue, prefix the title with `[Bug]`, `[Question]`, or `[Featur
 
 ## Contributing
 
-We welcome feedback through GitHub Issues. We currently do not accept pull requests from outside contributors, and pull requests are turned off for this repository.
+We welcome feedback through GitHub Issues. **We do not accept pull requests from outside contributors**, and pull requests are turned off for this repository.
 
 You can contribute by:
 1. Reporting bugs
 2. Asking questions that help us improve the documentation
 3. Suggesting features or improvements
 
-If you've spotted a fix, such as a typo, a broken example or an unclear explanation, describe it in an issue. We'll make the change and credit you.
+If you've spotted a fix, such as a typo, a broken example or a bug in the code, describe it in an issue. We'll make the change and credit you.
 
 To contribute:
 1. Search [existing issues](../../issues) to avoid duplicates
 2. Open a new issue using the `[Bug]`, `[Question]`, or `[Feature]` title prefix
 3. Include the details listed in [CONTRIBUTING.md](CONTRIBUTING.md)
-4. Remove any API keys, tokens, or personal data (including any student information) before posting
+4. Remove your OpenAI key and any personal data (including student information) before posting
 
 Checklist before submitting an issue:
 - [ ] searched existing issues
 - [ ] removed secrets and personal data
-- [ ] included endpoint, API version, and request ID (for bugs)
+- [ ] included steps to reproduce, and your Node.js version or Docker setup (for bugs)
 - [ ] used the correct title prefix
+
+You're also free to fork the project and adapt it for your own use under the terms of the Apache 2.0 license.
 
 ## Security
 
 **Do not report security vulnerabilities in public issues.** Use the repository's **Security** tab and click **Report a vulnerability**. See [SECURITY.md](SECURITY.md) for details.
 
+## Roadmap
+
+- **Assessments** (coming later)
+- <!-- TODO: Add other planned features. -->
+
 ## License
 
-[This project is licensed under the [LICENSE NAME]. See `LICENSE` for full text.]
+This project is licensed under the Apache License 2.0. See `LICENSE` for full text.
