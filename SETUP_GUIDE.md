@@ -88,23 +88,7 @@ curl -X POST http://localhost:3001/ai/cowrite-problem \
   }'
 ```
 
-#### 2. Generate Solution Key
-
-```bash
-curl -X POST http://localhost:3001/ai/solution-key \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Quadratic Equations",
-    "description": "Understanding the quadratic formula",
-    "discipline": "Mathematics",
-    "statement": "Solve the equation: x² + 5x + 6 = 0",
-    "commonMistakes": "Forgetting to factor properly",
-    "additionalInformation": "The equation can be factored",
-    "instructorPlan": "Factor first, then solve"
-  }'
-```
-
-#### 3. Get Chatbot Guidance
+#### 2. Get Chatbot Guidance
 
 ```bash
 curl -X POST http://localhost:3001/ai/planning-response \

@@ -1,0 +1,6 @@
+{
+  "title": "Free Fall Motion",
+  "description": "A problem about objects falling under gravity",
+  "discipline": "Physics",
+  "statement": "A ball is dropped from a height of 100 meters. Assuming no air resistance and g=9.8 m/s², calculate the time it takes to hit the ground."
+}

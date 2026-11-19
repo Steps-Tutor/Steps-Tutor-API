@@ -1,0 +1,26 @@
+{
+  "problem": {
+    "id": "prob-001",
+    "discipline": "Physics",
+    "title": "Free Fall Motion",
+    "description": "A problem about objects falling under gravity",
+    "statement": "A ball is dropped from a height of 100 meters. Assuming no air resistance and g=9.8 m/s², calculate the time it takes to hit the ground.",
+    "essentialConcepts": "Free fall motion, gravitational acceleration, kinematic equations",
+    "conceptsConnection": "Free fall is a special case of uniformly accelerated motion where the only force is gravity",
+    "assumptions": "No air resistance, constant gravitational acceleration",
+    "commonMistakes": "Forgetting square root, confusing velocity and acceleration",
+    "additionalInformation": "The equation s = ut + (1/2)gt² is fundamental",
+    "instructorPlan": "Start with basic kinematic equations, explain free fall as special case"
+  },
+  "studentMessage": "I think I need to use the kinematic equation. What values do I have?",
+  "conversationHistory": [
+    {
+      "role": "assistant",
+      "content": "Great! Let's start by identifying what we know from the problem."
+    },
+    {
+      "role": "user",
+      "content": "I don't know where to start with this problem. Can you help me?"
+    }
+  ]
+}
