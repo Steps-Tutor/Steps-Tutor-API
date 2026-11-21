@@ -1,0 +1,125 @@
+# Builds the STEPS-Tutor API image and pushes it to GHCR.
+# Started by hand from the Actions tab. See README.ghcr.md.
+
+name: Publish Docker image
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: steps-tutor-api
+
+jobs:
+  publish:
+    name: Build and push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Choose the next version tag
+        id: version
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          owner="${GITHUB_REPOSITORY_OWNER}"
+          package="${IMAGE_NAME}"
+          owner_lc="$(printf '%s' "$owner" | tr '[:upper:]' '[:lower:]')"
+          image="${REGISTRY}/${owner_lc}/${package}"
+
+          # Print existing 1.0.<patch> tags, or nothing when the package does not exist yet.
+          # Any error other than "not found" stops the job so a failed lookup cannot reuse 1.0.0.
+          query_tags() {
+            local endpoint="$1"
+            local errfile outfile status
+            errfile="$(mktemp)"
+            outfile="$(mktemp)"
+            set +e
+            gh api --paginate \
+              -H "Accept: application/vnd.github+json" \
+              "${endpoint}?per_page=100" \
+              --jq '.[].metadata.container.tags[]? | select(test("^1\\.0\\.[0-9]+$"))' \
+              >"$outfile" 2>"$errfile"
+            status=$?
+            set -e
+            if [ "$status" -ne 0 ]; then
+              if grep -Eq 'HTTP 404|Not Found|Package not found' "$errfile"; then
+                : >"$outfile"
+              else
+                echo "Failed to list package versions at ${endpoint}" >&2
+                cat "$errfile" >&2
+                exit 1
+              fi
+            fi
+            cat "$outfile"
+            rm -f "$errfile" "$outfile"
+          }
+
+          tags="$(printf '%s\n' \
+            "$(query_tags "/orgs/${owner}/packages/container/${package}/versions")" \
+            "$(query_tags "/users/${owner}/packages/container/${package}/versions")")"
+
+          patch=-1
+          while IFS= read -r tag; do
+            case "$tag" in
+              1.0.*)
+                n="${tag##*.}"
+                if [[ "$n" =~ ^[0-9]+$ ]] && [ "$((10#$n))" -gt "$patch" ]; then
+                  patch="$((10#$n))"
+                fi
+                ;;
+            esac
+          done <<< "$tags"
+
+          if [ "$patch" -lt 0 ]; then
+            version="1.0.0"
+          else
+            version="1.0.$((patch + 1))"
+          fi
+
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "image=${image}" >> "$GITHUB_OUTPUT"
+          echo "Image: ${image}"
+          echo "Version tag: ${version}"
+          echo "Also tagging: latest"
+
+      - name: Build and push
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          provenance: false
+          sbom: false
+          tags: |
+            ${{ steps.version.outputs.image }}:${{ steps.version.outputs.version }}
+            ${{ steps.version.outputs.image }}:latest
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+
+      - name: Write summary
+        run: |
+          {
+            echo "### Image published"
+            echo ""
+            echo "- \`${{ steps.version.outputs.image }}:${{ steps.version.outputs.version }}\`"
+            echo "- \`${{ steps.version.outputs.image }}:latest\`"
+          } >> "$GITHUB_STEP_SUMMARY"
