@@ -53,12 +53,14 @@ export class AllExceptionsFilter extends BaseExceptionFilter {
       return;
     }
     const responseBody = {
-      statusCode: status,
+      status: status,
       timestamp: new Date().toISOString(),
       path: request.url,
+      success: false,
       error: errorResponse,
       cause: exception instanceof Error ? exception.cause : undefined,
       message,
+      data: null
     };
     response.status(status).json(responseBody);
   }

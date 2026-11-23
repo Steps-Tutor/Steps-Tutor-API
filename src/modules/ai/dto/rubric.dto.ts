@@ -22,10 +22,7 @@ export class RubricLevelDto {
   @IsNumber()
   score!: number;
 
-  @ApiProperty({
-    description: 'Order of this level in the hierarchy',
-    example: 1,
-  })
+  @ApiProperty({ description: 'Order of this level in the hierarchy', example: 1 })
   @IsInt()
   order!: number;
 }

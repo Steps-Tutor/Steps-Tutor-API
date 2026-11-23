@@ -4,7 +4,14 @@
  */
 
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsArray, ValidateNested } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsArray,
+  IsIn,
+  ArrayMinSize,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 // ============================================================================
@@ -13,7 +20,7 @@ import { Type } from 'class-transformer';
 
 /**
  * Details of a problem including concepts, assumptions, and mistakes
- * Used in planning chatbot requests
+ * Used in planning tutor requests
  */
 export class ProblemDetailsDto {
   @ApiProperty({ required: false })
@@ -102,8 +109,47 @@ export class CowriteProblemRequestDto {
 }
 
 /**
+ * Request DTO for the solution-key endpoint
+ * Contains comprehensive problem details for solution generation
+ */
+export class GenerateSolutionKeyRequestDto {
+  @ApiProperty()
+  @IsString()
+  title!: string;
+
+  @ApiProperty()
+  @IsString()
+  description!: string;
+
+  @ApiProperty()
+  @IsString()
+  discipline!: string;
+
+  @ApiProperty()
+  @IsString()
+  statement!: string;
+
+  @ApiProperty()
+  @IsString()
+  commonMistakes!: string;
+
+  @ApiProperty()
+  @IsString()
+  additionalInformation!: string;
+
+  @ApiProperty()
+  @IsString()
+  instructorPlan!: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  assumptions?: string;
+}
+
+/**
  * Request DTO for the planning-response endpoint
- * Contains problem details and student message for chatbot guidance
+ * Contains problem details and student message for tutor guidance
  */
 export class PlanningChatbotRequestDto {
   @ApiProperty({ type: ProblemDetailsDto })
@@ -135,6 +181,56 @@ export class PlanningChatbotRequestDto {
   conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>;
 }
 
+export class EvaluationProblemDto {
+  @ApiProperty()
+  @IsString()
+  discipline!: string;
+
+  @ApiProperty()
+  @IsString()
+  title!: string;
+
+  @ApiProperty()
+  @IsString()
+  description!: string;
+
+  @ApiProperty()
+  @IsString()
+  statement!: string;
+}
+
+export class ConversationMessageDto {
+  @ApiProperty({ enum: ['user', 'assistant'] })
+  @IsIn(['user', 'assistant'])
+  role!: 'user' | 'assistant';
+
+  @ApiProperty()
+  @IsString()
+  content!: string;
+}
+
+/**
+ * Request DTO for the evaluate-conversation endpoint
+ * Contains all context needed to evaluate a conversation against a rubric
+ */
+export class EvaluateConversationRequestDto {
+  @ApiProperty({ type: EvaluationProblemDto })
+  @ValidateNested()
+  @Type(() => EvaluationProblemDto)
+  problem!: EvaluationProblemDto;
+
+  @ApiProperty({
+    type: [ConversationMessageDto],
+    description: 'Complete conversation between the student and the tutor',
+  })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => ConversationMessageDto)
+  conversationHistory!: ConversationMessageDto[];
+
+}
+
 // ============================================================================
 // Response DTOs
 // ============================================================================
@@ -150,7 +246,7 @@ export class ApiResponseDto<T> {
 }
 
 /**
- * Conversation history entry in planning chatbot
+ * Conversation history entry in planning tutor
  */
 export interface ConversationMessage {
   role: 'user' | 'assistant';

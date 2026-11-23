@@ -12,9 +12,13 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 
+import { CONVERSATION_EVALUATION_RUBRIC } from './constants/conversation-evaluation-rubric.constants';
 import { AIService, CowriteProblemResponse, PlanningChatbotResponse } from './services/ai.service';
+import { ConversationEvaluationResponse } from './types/ai-response.types';
 import {
   CowriteProblemRequestDto,
+  EvaluateConversationRequestDto,
+  GenerateSolutionKeyRequestDto,
   PlanningChatbotRequestDto,
   ApiResponseDto,
 } from './dto/ai.dto';
@@ -87,18 +91,86 @@ export class AIController {
     );
   }
 
+  @Post('solution-key')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Generate a solution key for a problem',
+    description: 'Creates a comprehensive solution key based on the problem details, common mistakes, and instructor plan.',
+  })
+  @ApiBody({
+    type: GenerateSolutionKeyRequestDto,
+    examples: {
+      example1: {
+        summary: 'Solution Key Generation',
+        description: 'Generating a solution key for a physics problem',
+        value: {
+          title: 'Free Fall Motion',
+          description: 'A problem about objects falling under gravity',
+          discipline: 'Physics',
+          statement: 'A ball is dropped from a height of 100 meters. Assuming no air resistance and g=9.8 m/s², calculate the time it takes to hit the ground.',
+          commonMistakes: 'Forgetting to use the square root when solving for time, confusing velocity and acceleration',
+          additionalInformation: 'The equation s = ut + (1/2)gt² is fundamental',
+          instructorPlan: 'Start with basic kinematic equations, explain free fall as special case',
+          assumptions: 'No air resistance, constant gravitational acceleration',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully generated solution key',
+    type: ApiResponseDto<{ solutionKey: string }>,
+    examples: {
+      example1: {
+        summary: 'Successful response',
+        value: {
+          data: {
+            solutionKey: '**Step 1: Identify the given information**\n- Initial height (s) = 100 m\n- Initial velocity (u) = 0 m/s (dropped, not thrown)\n- Acceleration (g) = 9.8 m/s² (downward)\n- Find: Time (t)\n\n**Step 2: Choose appropriate equation**\nFor motion with constant acceleration: s = ut + (1/2)gt²\n\n**Step 3: Substitute values**\n100 = 0 × t + (1/2) × 9.8 × t²\n100 = 4.9t²\n\n**Step 4: Solve for t**\nt² = 100 ÷ 4.9\nt² = 20.41\nt = √20.41\nt ≈ 4.52 seconds\n\n**Common mistakes to avoid:**\n- Do NOT forget to take the square root\n- Do NOT confuse acceleration with velocity\n- Do NOT ignore the ½ factor in the equation',
+          },
+          status: 200,
+          success: true,
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error',
+    example: {
+      data: null,
+      status: 500,
+      success: false,
+    },
+  })
+  async generateSolutionKey(
+    @Body() request: GenerateSolutionKeyRequestDto,
+  ): Promise<{ solutionKey: string }> {
+    const solutionKey = await this.aiService.generateSolutionKey(
+      request.title,
+      request.description,
+      request.discipline,
+      request.statement,
+      request.commonMistakes,
+      request.additionalInformation,
+      request.instructorPlan,
+      request.assumptions,
+    );
+
+    return { solutionKey };
+  }
+
   @Post('planning-response')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Get planning chatbot response for student guidance',
+    summary: 'Get planning tutor response for student guidance',
     description: 'Provides interactive guidance to help students plan their approach to solving a problem using the Socratic method.',
   })
   @ApiBody({
     type: PlanningChatbotRequestDto,
     examples: {
       example1: {
-        summary: 'First Turn of Planning Chatbot',
-        description: 'Student initiates conversation asking for guidance',
+        summary: 'First Turn of Planning Tutor',
+        description: 'Student initiates conversation asking for guidance from the planning tutor',
         value: {
           problem: {
             id: 'prob-001',
@@ -118,8 +190,8 @@ export class AIController {
         },
       },
       example2: {
-        summary: 'Continuing Conversation',
-        description: 'Student follows up after initial guidance',
+        summary: 'Continuing Conversation with Planning Tutor',
+        description: 'Student follows up after initial guidance from the planning tutor',
         value: {
           problem: {
             id: 'prob-001',
@@ -149,7 +221,7 @@ export class AIController {
       },
       example3: {
         summary: "Real Problem Example",
-        description: "An actual problem scenario for the planning chatbot",
+        description: "An actual problem scenario for the planning tutor",
         value: {
           "problem": {
             "discipline": "Physics",
@@ -171,17 +243,16 @@ export class AIController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Successfully generated chatbot response',
+    description: 'Successfully generated planning tutor response',
     type: ApiResponseDto<PlanningChatbotResponse>,
     examples: {
       example1: {
-        summary: 'Initial guidance response',
+        summary: 'Initial guidance response from planning tutor',
         value: {
           data: {
-            chatbotResponse: 'Let\'s start by understanding what we\'re trying to find. The problem asks us to calculate the time it takes for a ball to fall 100 meters. Before we jump into calculations, can you tell me: What do we know from the problem statement? What are the given values?',
+            tutorResponse: 'Let\'s start by understanding what we\'re trying to find. The problem asks us to calculate the time it takes for a ball to fall 100 meters. Before we jump into calculations, can you tell me: What do we know from the problem statement? What are the given values?',
             isPlanComplete: false,
             currentPhase: 'understanding',
-            attemptCount: 0,
           },
           status: 200,
           success: true,
@@ -191,10 +262,9 @@ export class AIController {
         summary: 'Follow-up guidance response',
         value: {
           data: {
-            chatbotResponse: 'Excellent thinking! You\'re on the right track with the kinematic equations. From the problem, we have: initial height = 100m, initial velocity = 0 (it\'s dropped, not thrown), and acceleration = 9.8 m/s². Now, do you know which kinematic equation relates these quantities to time?',
+            tutorResponse: 'Excellent thinking! You\'re on the right track with the kinematic equations. From the problem, we have: initial height = 100m, initial velocity = 0 (it\'s dropped, not thrown), and acceleration = 9.8 m/s². Now, do you know which kinematic equation relates these quantities to time?',
             isPlanComplete: false,
             currentPhase: 'equation_selection',
-            attemptCount: 1,
           },
           status: 200,
           success: true,
@@ -218,6 +288,90 @@ export class AIController {
       request.problem,
       request.studentMessage,
       request.conversationHistory,
+    );
+  }
+
+  @Post('evaluate-conversation')
+  @ApiOperation({
+    summary: 'Evaluate a student-tutor conversation against a rubric',
+    description:
+      'Evaluates the student messages in the provided conversation against the predefined rubric and returns the level achieved, reasoning and evidence for each criterion.',
+  })
+  @ApiBody({
+    type: EvaluateConversationRequestDto,
+    examples: {
+      example1: {
+        summary: 'Evaluate a planning conversation',
+        value: {
+          problem: {
+            discipline: 'Physics',
+            title: 'Free Fall Motion',
+            description: 'A problem about objects falling under gravity',
+            statement:
+              'A ball is dropped from a height of 100 meters. Assuming no air resistance and g=9.8 m/s², calculate the time it takes to hit the ground.',
+          },
+          conversationHistory: [
+            {
+              role: 'user',
+              content: "I don't know where to start with this problem.",
+            },
+            {
+              role: 'assistant',
+              content: 'What do we know from the problem statement?',
+            },
+            {
+              role: 'user',
+              content:
+                'The height is 100 m, the initial velocity is 0 and a = 9.8 m/s².',
+            },
+          ],
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully evaluated the conversation',
+    type: ApiResponseDto<ConversationEvaluationResponse>,
+    examples: {
+      example1: {
+        summary: 'Successful response',
+        value: {
+          data: {
+            evaluation: [
+              {
+                level_achieved: 2,
+                reasoning: 'The student identified the height, initial velocity and acceleration.',
+                evidence: [
+                  'The height is 100 m, the initial velocity is 0 and a = 9.8 m/s².',
+                ],
+                criteria_title: 'Identifies known and unknown quantities',
+                criteria_number: 1,
+              },
+            ],
+          },
+          status: 200,
+          success: true,
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error',
+    example: {
+      data: null,
+      status: 500,
+      success: false,
+    },
+  })
+  async evaluateConversation(
+    @Body() request: EvaluateConversationRequestDto,
+  ): Promise<ConversationEvaluationResponse> {
+    return await this.aiService.evaluateConversationWithRubric(
+      request.problem,
+      request.conversationHistory,
+      CONVERSATION_EVALUATION_RUBRIC,
     );
   }
 }

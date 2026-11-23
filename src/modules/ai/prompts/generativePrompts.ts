@@ -16,3 +16,26 @@ export const createCowriteProblemPrompt = (
     5. What additional information can help in solving this problem?
     6. Write a detailed step-by-step plan to solve the problem as an instructor.
     `;
+
+export const createCowriteProblemSolutionPrompt = (
+  title: string,
+  description: string,
+  discipline: string,
+  statement: string,
+  commonMistakes: string,
+  additionalInformation: string,
+  instructorPlan: string,
+  assumptions?: string,
+) => `
+    You are an expert of ${discipline} discipline. Consider the following problem details:
+    Title: ${title}
+    Description: ${description}
+    Problem Statement: ${statement}
+    Assumptions and Simplifications: ${assumptions || 'None'}
+    Common Mistakes and Feedback: ${commonMistakes}
+    Additional Information: ${additionalInformation}
+    Instructor's Step-by-Step Plan: ${instructorPlan}
+    
+    Based on the above details of the problem, generate a solution to the problem. Do not provide a very detailed solution, but ensure that the solution is clear and concise, following the instructor's step-by-step plan. Make sure to not over explain the solution so that students can still learn from the problem and correct their mistakes.
+    Provide the solution in a clear and structured HTML format that is accepted by KaTeX library, ensuring that you follow the instructor's step-by-step plan while solving the problem.
+To write the formulae in the solution, use the following HTML format: <p class="leading-5 [&amp;:not(:first-child)]:mt-6"> <span class="katex" data-equation="{{The equation in Latex}}" data-display-mode="false"> </span> </p> `;

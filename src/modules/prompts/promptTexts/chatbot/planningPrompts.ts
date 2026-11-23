@@ -236,7 +236,6 @@ export const createPlanningPrompt = (
   {
     "currentPhase": "understanding | concepts | connections | assumptions | information | planning | complete",
     "isPlanComplete": boolean,
-    "attemptCount": number
   }
   </system_message>
 

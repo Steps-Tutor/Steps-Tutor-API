@@ -37,9 +37,6 @@ OPENAI_MODEL_NAME=gpt-4
 
 # Server port (optional, defaults to 3000)
 PORT=3001
-
-# Frontend URL for CORS (optional)
-SITE_URL=http://localhost:3000
 ```
 
 ### 3. Start the Application
@@ -178,7 +175,7 @@ steps-public/
 
 ## Next Steps
 
-1. **Explore the API**: Visit http://localhost:3001/api
+1. **Explore the API**: Visit http://localhost:3000/api
 2. **Read the README**: Check [README.md](./README.md) for detailed documentation
 3. **Review the Code**: Start with `src/modules/ai/ai.controller.ts` to understand the API endpoints
 4. **Integrate with Frontend**: Use the APIs in your frontend application
