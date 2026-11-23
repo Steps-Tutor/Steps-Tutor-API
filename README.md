@@ -62,8 +62,7 @@ Learn more about the STEPS project at **https://steps.stanford.edu/**.
 - Requests that need AI processing are sent to OpenAI using **your** OpenAI API key, which you set in a `.env` file.
 - Nothing is stored by the API itself; it only needs your OpenAI key to run.
 
-<!-- TODO (dev team): Confirm the default port and request format. -->
-- **Default address**: `http://localhost:[PORT]`
+- **Default address**: `http://localhost:3001` when `PORT=3001` (the value in `.env.example`). If `PORT` is unset, the process listens on port 3000.
 - **Format**: JSON request and response bodies
 
 ## Prerequisites
@@ -71,8 +70,8 @@ Learn more about the STEPS project at **https://steps.stanford.edu/**.
 Before running the API, make sure you have:
 
 - An OpenAI API key ([OpenAI account](https://platform.openai.com/) with billing set up)
-- **For Docker:** [Docker](https://www.docker.com/) [and Docker Compose]
-- **To run directly:** Node.js [version] or later, and npm [version] or later
+- **For Docker:** [Docker](https://www.docker.com/) 24 or later (Docker Desktop on macOS and Windows includes this)
+- **To run directly:** Node.js 22 or later, and npm 10 or later
 
 ## Environment Variables
 
@@ -82,33 +81,127 @@ Copy the example file and fill in your values:
 cp .env.example .env
 ```
 
-<!-- TODO (dev team): List every variable the API reads, and mark which are required. -->
+The process reads these variables. `OPENAI_API_KEY` and `OPENAI_MODEL_NAME` are required for AI requests. The server can start without them; those requests then fail.
 
 ```bash
-# Required: used to process requests through OpenAI
-OPENAI_API_KEY="sk-..."
+# Required for AI requests. Your OpenAI key.
+OPENAI_API_KEY=sk-...
 
-# [Other variables, e.g. PORT, model name, log level]
+# Required for AI requests. Model sent to OpenAI.
+OPENAI_MODEL_NAME=gpt-5.2
+
+# Optional. Defaults to the OpenAI API. Set this for Azure OpenAI or another compatible endpoint.
+OPENAI_API_URL=https://api.openai.com/v1
+
+# Optional. Port the process listens on inside the container and, when you run Node directly, on your machine.
+# .env.example uses 3001. If this is unset, the process listens on 3000.
+PORT=3001
 ```
 
 Never commit your `.env` file or share your OpenAI key in a GitHub issue.
 
 ## Running With Docker
 
-<!-- TODO (dev team): Confirm commands. -->
+These steps build a local image with the Docker CLI and run it on your machine. Configuration is passed when the container starts, from your `.env` file. The key is not written into the image.
+
+From the repository root:
+
+### 1. Create your env file
 
 ```bash
-git clone [REPO_URL]
-cd [REPO_FOLDER]
-cp .env.example .env   # then add your OpenAI key
-[docker compose up]
+cp .env.example .env
 ```
 
-The API will be available at `http://localhost:[PORT]`.
+Edit `.env` and set `OPENAI_API_KEY` to your key. Leave `PORT=3001` unless you want a different port. If you change `PORT`, use that same port in the `-p` flag below (`-p <PORT>:<PORT>`).
+
+### 2. Build the image
+
+```bash
+docker build -t steps-tutor-api:local .
+```
+
+This compiles the API inside the image. Rebuild with the same command after you change the source.
+
+### 3. Run the container
+
+Foreground (logs in this terminal; Ctrl+C stops and removes the container):
+
+```bash
+docker run --rm -p 3001:3001 --env-file .env --name steps-tutor-api steps-tutor-api:local
+```
+
+Detached:
+
+```bash
+docker run -d -p 3001:3001 --env-file .env --name steps-tutor-api steps-tutor-api:local
+docker logs -f steps-tutor-api
+```
+
+The API is at `http://localhost:3001`. Swagger UI is at `http://localhost:3001/api`.
+
+### 4. Test it
+
+Wait until the logs include `Nest application successfully started`.
+
+Swagger (no OpenAI call). A `200` means the container is serving:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3001/api
+```
+
+Request validation (no OpenAI call). An empty body should return `400`:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" \
+  -X POST http://localhost:3001/ai/cowrite-problem \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+Co-write a problem (calls OpenAI with your key):
+
+```bash
+curl -s -X POST http://localhost:3001/ai/cowrite-problem \
+  -H "Content-Type: application/json" \
+  -d @examples/fixtures/cowrite-problem.request.json
+```
+
+Planning tutor (calls OpenAI with your key):
+
+```bash
+curl -s -X POST http://localhost:3001/ai/planning-response \
+  -H "Content-Type: application/json" \
+  -d @examples/fixtures/planning-tutor.request.json
+```
+
+A successful AI response is JSON with `success: true`, `status: 200`, and a `data` object.
+
+Container health, as reported by Docker:
+
+```bash
+docker ps --filter name=steps-tutor-api
+```
+
+The `STATUS` column shows `healthy` after the first successful check against `/api`.
+
+### 5. Stop the container
+
+If you started it in the foreground, press Ctrl+C.
+
+If you started it detached:
+
+```bash
+docker stop steps-tutor-api
+docker rm steps-tutor-api
+```
+
+Remove the local image when you no longer need it:
+
+```bash
+docker rmi steps-tutor-api:local
+```
 
 ## Running Locally
-
-<!-- TODO (dev team): Confirm commands and script names. -->
 
 1) Install dependencies
 
@@ -121,22 +214,22 @@ npm install
 3) Start the API
 
 ```bash
-[npm run dev]     # development
-[npm run build]   # build for production
-[npm start]       # run the production build
+npm run start:dev   # development, reloads on file changes
+npm run build       # compile to dist/
+npm start           # run the compiled app
 ```
 
 ## Endpoints Overview
 
-<!-- TODO (dev team): Replace with real endpoints. -->
+Interactive documentation is served at `/api` (Swagger UI) while the process is running.
 
 | Method | Endpoint | Description |
 | ------ | -------- | ----------- |
-| `[METHOD]` | `[/endpoint]` | [Start or continue a tutoring session] |
-| `[METHOD]` | `[/endpoint]` | [Create or update a problem] |
-| `[METHOD]` | `[/endpoint]` | [Get a problem] |
+| `GET` | `/api` | Swagger UI |
+| `POST` | `/ai/cowrite-problem` | Generate problem components (concepts, assumptions, mistakes, instructor plan) from a title, description, discipline, and statement |
+| `POST` | `/ai/planning-response` | Planning-tutor turn: send the problem, the student message, and conversation history |
 
-[Link to full endpoint documentation, if any]
+Example bodies are in `examples/fixtures/cowrite-problem.request.json` and `examples/fixtures/planning-tutor.request.json`.
 
 ## Errors
 
@@ -155,9 +248,21 @@ npm install
 
 - **The API won't start**
   - Check that `.env` exists and that `OPENAI_API_KEY` is set.
+  - For Docker, confirm the container is running with `docker ps` and read `docker logs steps-tutor-api`.
+
+- **`docker build` fails**
+  - Run the command from the repository root (the directory that contains the `Dockerfile`).
+  - Confirm Docker is running.
+
+- **Port already allocated**
+  - Another process is using the host port in `-p`. Stop that container (`docker stop steps-tutor-api`) or publish a different host port, for example `-p 3002:3001`. The number on the right is the port inside the container and must match `PORT` in `.env`.
+
+- **Swagger or curl cannot connect**
+  - The host port in the URL must be the left-hand side of `-p`. With `-p 3001:3001` and `PORT=3001`, use `http://localhost:3001`.
 
 - **Errors mentioning OpenAI authentication**
   - Check that your OpenAI key is valid and that billing is set up on your OpenAI account.
+  - If the container was already running, recreate it after editing `.env` so it picks up the new values: `docker stop steps-tutor-api`, `docker rm steps-tutor-api`, then `docker run` again.
 
 - **Rate limit or quota errors**
   - These come from your OpenAI account's limits. Check your usage and limits in the OpenAI dashboard.
