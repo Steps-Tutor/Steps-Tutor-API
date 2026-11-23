@@ -19,6 +19,7 @@ Built with Node.js and TypeScript. You run it on your own machine or server, eit
 - [Running With Docker](#running-with-docker)
 - [Running Locally](#running-locally)
 - [Endpoints Overview](#endpoints-overview)
+- [Examples](#examples)
 - [Errors](#errors)
 - [Data And Privacy](#data-and-privacy)
 - [Troubleshooting](#troubleshooting)
@@ -42,15 +43,15 @@ Learn more about the STEPS project at **https://steps.stanford.edu/**.
 
 ## Core Features
 
-<!-- TODO (dev team): Fill in specifics and endpoint names for each area. -->
+- **Planning tutor**
+  - Send a problem, the student's latest message, and the conversation so far. The API returns the next tutor turn: a short question that helps the student build their own plan, without solving the problem for them.
+  - The response also reports whether the plan is complete, the current planning phase, and how many attempts the student has made on the current question.
+  - Endpoint: `POST /ai/planning-response`
 
-- **Tutoring sessions**
-  - [Send a student's work and receive STEPS guidance on planning, checking and reflecting]
-  - [Key endpoint(s)]
-
-- **Problem management**
-  - [Create, adapt and retrieve problems]
-  - [Key endpoint(s)]
+- **Problem co-writing**
+  - Send a title, description, discipline, and problem statement. The API returns the components an instructor uses to set up that problem: essential concepts, how those concepts connect, assumptions, common mistakes, extra information, and a step-by-step instructor plan.
+  - Nothing is stored. Your application keeps the result and sends those fields back on later planning requests.
+  - Endpoint: `POST /ai/cowrite-problem`
 
 - **Bring your own OpenAI key**
   - The API uses your OpenAI key to process requests, so you control your own usage and costs.
@@ -231,11 +232,94 @@ Interactive documentation is served at `/api` (Swagger UI) while the process is 
 
 Example bodies are in `examples/fixtures/cowrite-problem.request.json` and `examples/fixtures/planning-tutor.request.json`.
 
+## Examples
+
+[`examples/`](examples/README.md) has copyable clients for both endpoints, the JSON bodies those clients send, and small demos that call a running API.
+
+| What | Where |
+| ---- | ----- |
+| TypeScript client | [`examples/typescript/src/client.ts`](examples/typescript/src/client.ts) and [`types.ts`](examples/typescript/src/types.ts) |
+| Python client | [`examples/python/src/client.py`](examples/python/src/client.py) and [`api_types.py`](examples/python/src/api_types.py) |
+| Request bodies | [`examples/fixtures/cowrite-problem.request.json`](examples/fixtures/cowrite-problem.request.json), [`examples/fixtures/planning-tutor.request.json`](examples/fixtures/planning-tutor.request.json) |
+
+Start the API first (see [Running Locally](#running-locally) or [Running With Docker](#running-with-docker)). Then, from `examples/typescript`:
+
+```bash
+npm install
+npm run cowrite-problem
+npm run planning-tutor
+```
+
+From `examples/python`:
+
+```bash
+pip install -r requirements.txt
+python src/cowrite_problem.py
+python src/planning_tutor.py
+```
+
+Both demos use `http://localhost:3001` unless you set `BASE_URL`. Full setup is in [`examples/README.md`](examples/README.md).
+
 ## Errors
 
-<!-- TODO (dev team): Describe the error format and common error codes. -->
+A successful call returns HTTP `200`:
 
-[How errors are returned, e.g. status codes and response body format.]
+```json
+{
+  "data": {},
+  "status": 200,
+  "success": true
+}
+```
+
+`data` is the result for that endpoint. `success` is `true` only when the status is in the 200–299 range.
+
+Failed calls are not wrapped this way. Use the HTTP status. The body has `statusCode`, `message`, and `error`.
+
+| Status | When |
+| ------ | ---- |
+| `400` | A required field is missing, or a field has the wrong type. `message` is a list of validation errors. |
+| `404` | The path does not match an endpoint. |
+| `500` | The body was valid, but the API could not finish the request. |
+
+Validation error (`400`):
+
+```json
+{
+  "statusCode": 400,
+  "message": [
+    "title must be a string",
+    "statement must be a string"
+  ],
+  "error": "Bad Request"
+}
+```
+
+`500` has two body shapes.
+
+When the API itself rejects the result (OpenAI returned nothing the API could parse), the body is:
+
+```json
+{
+  "statusCode": 500,
+  "message": "No tool call response from OpenAI",
+  "error": "Internal Server Error"
+}
+```
+
+When something else fails, including a missing `OPENAI_MODEL_NAME` or an error from OpenAI, the body also includes `timestamp` and `path`:
+
+```json
+{
+  "statusCode": 500,
+  "timestamp": "2026-11-23T15:00:00.000Z",
+  "path": "/ai/planning-response",
+  "error": "Internal server error",
+  "message": "The error text from OpenAI or from configuration."
+}
+```
+
+OpenAI's own status, such as `401` or `429`, is not forwarded. Those failures are `500` here, and `message` carries the underlying reason. The stack trace is written to the server log and is not included in the response.
 
 ## Data And Privacy
 
