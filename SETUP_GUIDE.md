@@ -175,7 +175,7 @@ steps-public/
 
 ## Next Steps
 
-1. **Explore the API**: Visit http://localhost:3000/api
+1. **Explore the API**: Visit http://localhost:3001/api
 2. **Read the README**: Check [README.md](./README.md) for detailed documentation
 3. **Review the Code**: Start with `src/modules/ai/ai.controller.ts` to understand the API endpoints
 4. **Integrate with Frontend**: Use the APIs in your frontend application
