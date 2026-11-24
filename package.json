@@ -11,7 +11,7 @@
     "start": "node dist/src/main",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
+    "start:prod": "node dist/src/main",
     "migration:generate": "node -r tsconfig-paths/register ./node_modules/typeorm/cli-ts-node-commonjs.js migration:generate ./src/database/migrations/$npm_config_filename -d ./datasource.ts",
     "migration:run": "node -r tsconfig-paths/register ./node_modules/typeorm/cli-ts-node-commonjs.js migration:run -d ./datasource.ts",
     "migration:revert": "node -r tsconfig-paths/register ./node_modules/typeorm/cli-ts-node-commonjs.js migration:revert -d ./datasource.ts",
