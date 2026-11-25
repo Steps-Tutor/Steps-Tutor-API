@@ -403,7 +403,6 @@ You're also free to fork the project and adapt it for your own use under the ter
 ## Roadmap
 
 - **Assessments** (coming later)
-- <!-- TODO: Add other planned features. -->
 
 ## License
 
