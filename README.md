@@ -9,6 +9,8 @@ The STEPS-Tutor API supports:
 
 Built with Node.js and TypeScript. You run it on your own machine or server, either directly or with Docker.
 
+**Quick start:** follow [Running With Docker](#running-with-docker) (no Node.js needed) or [Running Locally](#running-locally). Either way, the API runs at `http://localhost:3001` and Swagger UI is at `http://localhost:3001/api`.
+
 ## Table Of Contents
 
 - [Why STEPS-Tutor API](#why-steps-tutor-api)
@@ -73,6 +75,7 @@ Before running the API, make sure you have:
 - An OpenAI API key ([OpenAI account](https://platform.openai.com/) with billing set up)
 - **For Docker:** [Docker](https://www.docker.com/) 24 or later (Docker Desktop on macOS and Windows includes this)
 - **To run directly:** Node.js 22 or later, and npm 10 or later
+- **On Windows:** run the commands in this README from Git Bash or WSL. They are written for a Unix-style shell and some do not work in PowerShell or Command Prompt.
 
 ## Environment Variables
 
@@ -128,13 +131,15 @@ This compiles the API inside the image. Rebuild with the same command after you 
 Foreground (logs in this terminal; Ctrl+C stops and removes the container):
 
 ```bash
-docker run --rm -p 3001:3001 --env-file .env --name steps-tutor-api steps-tutor-api:local
+docker run --rm --init -p 3001:3001 --env-file .env --name steps-tutor-api steps-tutor-api:local
 ```
+
+Keep `--init`. Without it, Ctrl+C does not stop the container.
 
 Detached:
 
 ```bash
-docker run -d -p 3001:3001 --env-file .env --name steps-tutor-api steps-tutor-api:local
+docker run -d --init -p 3001:3001 --env-file .env --name steps-tutor-api steps-tutor-api:local
 docker logs -f steps-tutor-api
 ```
 
@@ -187,7 +192,7 @@ The `STATUS` column shows `healthy` after the first successful check against `/a
 
 ### 5. Stop the container
 
-If you started it in the foreground, press Ctrl+C.
+If you started it in the foreground, press Ctrl+C. If `docker ps` still lists `steps-tutor-api` afterwards (for example, it was started without `--init`), run `docker stop steps-tutor-api`.
 
 If you started it detached:
 
@@ -212,13 +217,16 @@ npm install
 
 2) Set up your `.env` file (see [Environment Variables](#environment-variables))
 
-3) Start the API
+3) Build and start the API
 
 ```bash
-npm run start:dev   # development, reloads on file changes
-npm run build       # compile to dist/
-npm start           # run the compiled app
+npm run build
+npm start
 ```
+
+When the log shows `Nest application successfully started`, open **http://localhost:3001/api** (Swagger UI). To check that it works, run the commands in [Test it](#4-test-it).
+
+> **Editing the code?** Use `npm run start:dev` instead of step 3. It compiles and restarts the API automatically whenever you save a file.
 
 ## Endpoints Overview
 
@@ -333,6 +341,12 @@ OpenAI's own status, such as `401` or `429`, is not forwarded. Those failures ar
 - **The API won't start**
   - Check that `.env` exists and that `OPENAI_API_KEY` is set.
   - For Docker, confirm the container is running with `docker ps` and read `docker logs steps-tutor-api`.
+
+- **`Cannot GET /` in the browser or the logs**
+  - This is expected. The API has no page at `/`. Open `/api` for Swagger UI.
+
+- **`docker rmi` fails with "container … is using its referenced image"**
+  - A container from this image still exists. Run `docker rm -f steps-tutor-api`, then `docker rmi steps-tutor-api:local` again.
 
 - **`docker build` fails**
   - Run the command from the repository root (the directory that contains the `Dockerfile`).
