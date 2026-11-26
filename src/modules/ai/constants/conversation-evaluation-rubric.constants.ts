@@ -1,6 +1,10 @@
 import { RubricMetric } from '../types/rubric.types';
 
-// Placeholder based on the endpoint example; replace with the final rubric.
+/**
+ * Rubric applied by POST /ai/evaluate-conversation.
+ * Callers do not send a rubric. level_achieved in the response is the level
+ * order (1–4). Each level's score stays 0–3 and is not returned.
+ */
 export const CONVERSATION_EVALUATION_RUBRIC: RubricMetric[] = [
   {
     levels: [

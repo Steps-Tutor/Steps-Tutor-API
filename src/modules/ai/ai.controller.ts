@@ -276,7 +276,7 @@ export class AIController {
                 evidence: [
                   'The height is 100 m, the initial velocity is 0 and a = 9.8 m/s².',
                 ],
-                criteria_title: 'Identifies known and unknown quantities',
+                criteria_title: 'Concept Identification Accuracy',
                 criteria_number: 1,
               },
             ],
