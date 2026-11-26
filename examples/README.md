@@ -20,7 +20,7 @@ const result = await planningTutor('http://localhost:3001', {
 });
 
 if (result.success) {
-  console.log(result.data.chatbotResponse);
+  console.log(result.data.tutorResponse);
 }
 ```
 
@@ -33,7 +33,7 @@ result = planning_tutor("http://localhost:3001", {
 })
 
 if result.get("success"):
-    print(result["data"]["chatbotResponse"])
+    print(result["data"]["tutorResponse"])
 ```
 
 ## Prerequisites
@@ -49,6 +49,7 @@ Interactive docs: `/api` (Swagger).
 |--------|------|-----------------|---------|
 | `POST` | `/ai/cowrite-problem` | `cowriteProblem` / `cowrite_problem` | [`fixtures/cowrite-problem.request.json`](./fixtures/cowrite-problem.request.json) |
 | `POST` | `/ai/planning-response` | `planningTutor` / `planning_tutor` | [`fixtures/planning-tutor.request.json`](./fixtures/planning-tutor.request.json) |
+| `POST` | `/ai/evaluate-conversation` | `evaluateConversation` / `evaluate_conversation` | [`fixtures/evaluate-conversation.request.json`](./fixtures/evaluate-conversation.request.json) |
 
 ## Run demos
 
@@ -59,6 +60,7 @@ cd examples/typescript
 npm install
 npm run cowrite-problem
 npm run planning-tutor
+npm run evaluate-conversation
 ```
 
 ### Python
@@ -68,4 +70,5 @@ cd examples/python
 pip install -r requirements.txt
 python src/cowrite_problem.py
 python src/planning_tutor.py
+python src/evaluate_conversation.py
 ```

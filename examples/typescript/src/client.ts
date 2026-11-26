@@ -6,6 +6,8 @@
 import type {
   CowriteProblemRequest,
   CowriteProblemResponse,
+  EvaluateConversationRequest,
+  EvaluateConversationResponse,
   PlanningTutorRequest,
   PlanningTutorResponse,
 } from './types.js';
@@ -37,4 +39,12 @@ export function planningTutor(
   body: PlanningTutorRequest,
 ): Promise<PlanningTutorResponse> {
   return postJson(`${baseUrl}/ai/planning-response`, body);
+}
+
+/** POST /ai/evaluate-conversation */
+export function evaluateConversation(
+  baseUrl: string,
+  body: EvaluateConversationRequest,
+): Promise<EvaluateConversationResponse> {
+  return postJson(`${baseUrl}/ai/evaluate-conversation`, body);
 }

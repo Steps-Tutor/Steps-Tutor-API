@@ -10,6 +10,8 @@ import httpx
 from api_types import (
     CowriteProblemRequest,
     CowriteProblemResponse,
+    EvaluateConversationRequest,
+    EvaluateConversationResponse,
     PlanningTutorRequest,
     PlanningTutorResponse,
 )
@@ -37,3 +39,10 @@ def planning_tutor(
 ) -> PlanningTutorResponse:
     """POST /ai/planning-response"""
     return _post_json(f"{base_url}/ai/planning-response", body)  # type: ignore[return-value]
+
+
+def evaluate_conversation(
+    base_url: str, body: EvaluateConversationRequest
+) -> EvaluateConversationResponse:
+    """POST /ai/evaluate-conversation"""
+    return _post_json(f"{base_url}/ai/evaluate-conversation", body)  # type: ignore[return-value]
