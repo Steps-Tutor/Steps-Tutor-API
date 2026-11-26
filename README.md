@@ -47,8 +47,13 @@ Learn more about the STEPS project at **https://steps.stanford.edu/**.
 
 - **Planning tutor**
   - Send a problem, the student's latest message, and the conversation so far. The API returns the next tutor turn: a short question that helps the student build their own plan, without solving the problem for them.
-  - The response also reports whether the plan is complete, the current planning phase, and how many attempts the student has made on the current question.
+  - The response also reports whether the plan is complete and the current planning phase.
   - Endpoint: `POST /ai/planning-response`
+
+- **Conversation evaluation**
+  - Send the problem (`discipline`, `title`, `description`, `statement`) and the full student-tutor conversation. The API scores the student's messages against its own rubric. The request does not include a rubric.
+  - The response has one result per criterion, in rubric order: `level_achieved` (level order 1–4, where 1 is the lowest), `reasoning`, `evidence`, `criteria_title`, and `criteria_number`.
+  - Endpoint: `POST /ai/evaluate-conversation`
 
 - **Problem co-writing**
   - Send a title, description, discipline, and problem statement. The API returns the components an instructor uses to set up that problem: essential concepts, how those concepts connect, assumptions, common mistakes, extra information, and a step-by-step instructor plan.
@@ -180,6 +185,14 @@ curl -s -X POST http://localhost:3001/ai/planning-response \
   -d @examples/fixtures/planning-tutor.request.json
 ```
 
+Evaluate a conversation (calls OpenAI with your key):
+
+```bash
+curl -s -X POST http://localhost:3001/ai/evaluate-conversation \
+  -H "Content-Type: application/json" \
+  -d @examples/fixtures/evaluate-conversation.request.json
+```
+
 A successful AI response is JSON with `success: true`, `status: 200`, and a `data` object.
 
 Container health, as reported by Docker:
@@ -236,19 +249,20 @@ Interactive documentation is served at `/api` (Swagger UI) while the process is 
 | ------ | -------- | ----------- |
 | `GET` | `/api` | Swagger UI |
 | `POST` | `/ai/cowrite-problem` | Generate problem components (concepts, assumptions, mistakes, instructor plan) from a title, description, discipline, and statement |
-| `POST` | `/ai/planning-response` | Planning-tutor turn: send the problem, the student message, and conversation history |
+| `POST` | `/ai/planning-response` | Planning-tutor turn: send the problem, the student message, and conversation history. The response is the tutor reply, whether the plan is complete, and the current phase |
+| `POST` | `/ai/evaluate-conversation` | Score the conversation against the API rubric. Returns one result per criterion |
 
-Example bodies are in `examples/fixtures/cowrite-problem.request.json` and `examples/fixtures/planning-tutor.request.json`.
+Example bodies are in `examples/fixtures/cowrite-problem.request.json`, `examples/fixtures/planning-tutor.request.json`, and `examples/fixtures/evaluate-conversation.request.json`.
 
 ## Examples
 
-[`examples/`](examples/README.md) has copyable clients for both endpoints, the JSON bodies those clients send, and small demos that call a running API.
+[`examples/`](examples/README.md) has copyable clients for each endpoint, the JSON bodies those clients send, and small demos that call a running API.
 
 | What | Where |
 | ---- | ----- |
 | TypeScript client | [`examples/typescript/src/client.ts`](examples/typescript/src/client.ts) and [`types.ts`](examples/typescript/src/types.ts) |
 | Python client | [`examples/python/src/client.py`](examples/python/src/client.py) and [`api_types.py`](examples/python/src/api_types.py) |
-| Request bodies | [`examples/fixtures/cowrite-problem.request.json`](examples/fixtures/cowrite-problem.request.json), [`examples/fixtures/planning-tutor.request.json`](examples/fixtures/planning-tutor.request.json) |
+| Request bodies | [`examples/fixtures/cowrite-problem.request.json`](examples/fixtures/cowrite-problem.request.json), [`examples/fixtures/planning-tutor.request.json`](examples/fixtures/planning-tutor.request.json), [`examples/fixtures/evaluate-conversation.request.json`](examples/fixtures/evaluate-conversation.request.json) |
 
 Start the API first (see [Running Locally](#running-locally) or [Running With Docker](#running-with-docker)). Then, from `examples/typescript`:
 
@@ -256,6 +270,7 @@ Start the API first (see [Running Locally](#running-locally) or [Running With Do
 npm install
 npm run cowrite-problem
 npm run planning-tutor
+npm run evaluate-conversation
 ```
 
 From `examples/python`:
@@ -264,9 +279,10 @@ From `examples/python`:
 pip install -r requirements.txt
 python src/cowrite_problem.py
 python src/planning_tutor.py
+python src/evaluate_conversation.py
 ```
 
-Both demos use `http://localhost:3001` unless you set `BASE_URL`. Full setup is in [`examples/README.md`](examples/README.md).
+These demos use `http://localhost:3001` unless you set `BASE_URL`. Full setup is in [`examples/README.md`](examples/README.md).
 
 ## Errors
 
@@ -282,7 +298,7 @@ A successful call returns HTTP `200`:
 
 `data` is the result for that endpoint. `success` is `true` only when the status is in the 200–299 range.
 
-Failed calls are not wrapped this way. Use the HTTP status. The body has `statusCode`, `message`, and `error`.
+Failed calls are not wrapped this way. Use the HTTP status. Validation errors and errors the API raises itself include `statusCode`, `message`, and `error`. Unhandled failures use `status` instead of `statusCode`, and also include `success: false` and `data: null`.
 
 | Status | When |
 | ------ | ---- |
@@ -315,15 +331,17 @@ When the API itself rejects the result (OpenAI returned nothing the API could pa
 }
 ```
 
-When something else fails, including a missing `OPENAI_MODEL_NAME` or an error from OpenAI, the body also includes `timestamp` and `path`:
+When something else fails, including a missing `OPENAI_MODEL_NAME` or an error from OpenAI, the body uses `status` and also includes `success`, `data`, `timestamp`, and `path`:
 
 ```json
 {
-  "statusCode": 500,
+  "status": 500,
   "timestamp": "2026-11-23T15:00:00.000Z",
   "path": "/ai/planning-response",
+  "success": false,
   "error": "Internal server error",
-  "message": "The error text from OpenAI or from configuration."
+  "message": "The error text from OpenAI or from configuration.",
+  "data": null
 }
 ```
 
