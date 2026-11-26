@@ -12,10 +12,6 @@ import {
   Logger,
 } from '@nestjs/common';
 
-import {
-  createCowriteProblemPrompt,
-  createCowriteProblemSolutionPrompt,
-} from '../prompts/generativePrompts';
 import { PromptsService } from '@modules/prompts/services/prompts.service';
 import {
   ConversationEvaluationResponse,
@@ -84,7 +80,7 @@ export class AIService {
       `cowriteProblem called - title="${title}" discipline="${discipline}"`,
     );
 
-    const cowritePrompt = createCowriteProblemPrompt(
+    const cowritePrompt = await this.promptsService.createCowriteProblemPrompt(
       title,
       description,
       discipline,
@@ -173,89 +169,6 @@ export class AIService {
 
     this.logger.error('cowriteProblem - no tool call in OpenAI response');
     throw new InternalServerErrorException('No tool call response from OpenAI');
-  }
-
-  /**
-   * Generate a solution key for a problem
-   */
-  async generateSolutionKey(
-    title: string,
-    description: string,
-    discipline: string,
-    statement: string,
-    commonMistakes: string,
-    additionalInformation: string,
-    instructorPlan: string,
-    assumptions?: string,
-  ): Promise<string> {
-    this.logger.log(
-      `generateSolutionKey called - title="${title}" discipline="${discipline}"`,
-    );
-
-    const cowriteSolutionPrompt = createCowriteProblemSolutionPrompt(
-      title,
-      description,
-      discipline,
-      statement,
-      commonMistakes,
-      additionalInformation,
-      instructorPlan,
-      assumptions,
-    );
-
-    const toolFunction: ChatCompletionTool = {
-      type: 'function',
-      function: {
-        name: 'generate_solution_key',
-        description: 'Generates a detailed solution key for a problem.',
-        parameters: {
-          type: 'object',
-          properties: {
-            solutionKey: {
-              type: 'string',
-              description:
-                'A detailed solution key for the problem in KaTeX format.',
-            },
-          },
-          required: ['solutionKey'],
-        },
-      },
-    };
-
-    let response: ChatCompletion;
-    try {
-      response = await this.createChatCompletion({
-        messages: [{ role: 'user', content: cowriteSolutionPrompt }],
-        model: this.configService.getOrThrow<string>('OPENAI_MODEL_NAME'),
-        tools: [toolFunction],
-        tool_choice: 'required',
-      });
-
-      this.logger.log(
-        `generateSolutionKey - OpenAI responded, finish_reason=${response.choices[0]?.finish_reason}`,
-      );
-    } catch (error) {
-      this.logger.error(
-        `generateSolutionKey - OpenAI call failed: ${(error as Error)?.message}`,
-      );
-      throw error;
-    }
-
-    if (response?.choices[0]?.message?.tool_calls?.length) {
-      const toolCall = response.choices[0].message.tool_calls[0];
-      if (toolCall.type === 'function' && toolCall.function.arguments) {
-        const toolResponse = JSON.parse(toolCall.function.arguments);
-        this.logger.log(
-          'generateSolutionKey - successfully parsed solution key',
-        );
-        return toolResponse.solutionKey;
-      }
-    }
-
-    this.logger.error('generateSolutionKey - no tool call in OpenAI response');
-    throw new InternalServerErrorException(
-      'No tool call response from OpenAI for solution key generation',
-    );
   }
 
   /**

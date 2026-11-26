@@ -5,6 +5,7 @@ import { createPlanningPrompt } from '../promptTexts/chatbot/planningPrompts';
 import { createAnswerCheckingPrompt } from '../promptTexts/chatbot/answerCheckingPrompts';
 import { createReflectionPrompt } from '../promptTexts/chatbot/reflectionPrompt';
 import {
+  createCowriteProblemPrompt,
   createEvaluationWithRubricPrompt,
   createPlanningEvaluationPrompt,
 } from '../promptTexts/generativePrompts';
@@ -17,6 +18,18 @@ import {
 @Injectable()
 export class PromptsService {
   private readonly logger = new Logger(PromptsService.name);
+
+  /**
+   * Get a prompt for co-writing problem components
+   */
+  async createCowriteProblemPrompt(
+    title: string,
+    description: string,
+    discipline: string,
+    statement: string,
+  ): Promise<string> {
+    return createCowriteProblemPrompt(title, description, discipline, statement);
+  }
 
   /**
    * Get a planning prompt for problem solving guidance

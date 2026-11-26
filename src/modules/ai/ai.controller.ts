@@ -18,7 +18,6 @@ import { ConversationEvaluationResponse } from './types/ai-response.types';
 import {
   CowriteProblemRequestDto,
   EvaluateConversationRequestDto,
-  GenerateSolutionKeyRequestDto,
   PlanningChatbotRequestDto,
   ApiResponseDto,
 } from './dto/ai.dto';
@@ -89,74 +88,6 @@ export class AIController {
       request.discipline,
       request.statement,
     );
-  }
-
-  @Post('solution-key')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Generate a solution key for a problem',
-    description: 'Creates a comprehensive solution key based on the problem details, common mistakes, and instructor plan.',
-  })
-  @ApiBody({
-    type: GenerateSolutionKeyRequestDto,
-    examples: {
-      example1: {
-        summary: 'Solution Key Generation',
-        description: 'Generating a solution key for a physics problem',
-        value: {
-          title: 'Free Fall Motion',
-          description: 'A problem about objects falling under gravity',
-          discipline: 'Physics',
-          statement: 'A ball is dropped from a height of 100 meters. Assuming no air resistance and g=9.8 m/s², calculate the time it takes to hit the ground.',
-          commonMistakes: 'Forgetting to use the square root when solving for time, confusing velocity and acceleration',
-          additionalInformation: 'The equation s = ut + (1/2)gt² is fundamental',
-          instructorPlan: 'Start with basic kinematic equations, explain free fall as special case',
-          assumptions: 'No air resistance, constant gravitational acceleration',
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Successfully generated solution key',
-    type: ApiResponseDto<{ solutionKey: string }>,
-    examples: {
-      example1: {
-        summary: 'Successful response',
-        value: {
-          data: {
-            solutionKey: '**Step 1: Identify the given information**\n- Initial height (s) = 100 m\n- Initial velocity (u) = 0 m/s (dropped, not thrown)\n- Acceleration (g) = 9.8 m/s² (downward)\n- Find: Time (t)\n\n**Step 2: Choose appropriate equation**\nFor motion with constant acceleration: s = ut + (1/2)gt²\n\n**Step 3: Substitute values**\n100 = 0 × t + (1/2) × 9.8 × t²\n100 = 4.9t²\n\n**Step 4: Solve for t**\nt² = 100 ÷ 4.9\nt² = 20.41\nt = √20.41\nt ≈ 4.52 seconds\n\n**Common mistakes to avoid:**\n- Do NOT forget to take the square root\n- Do NOT confuse acceleration with velocity\n- Do NOT ignore the ½ factor in the equation',
-          },
-          status: 200,
-          success: true,
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 500,
-    description: 'Internal server error',
-    example: {
-      data: null,
-      status: 500,
-      success: false,
-    },
-  })
-  async generateSolutionKey(
-    @Body() request: GenerateSolutionKeyRequestDto,
-  ): Promise<{ solutionKey: string }> {
-    const solutionKey = await this.aiService.generateSolutionKey(
-      request.title,
-      request.description,
-      request.discipline,
-      request.statement,
-      request.commonMistakes,
-      request.additionalInformation,
-      request.instructorPlan,
-      request.assumptions,
-    );
-
-    return { solutionKey };
   }
 
   @Post('planning-response')

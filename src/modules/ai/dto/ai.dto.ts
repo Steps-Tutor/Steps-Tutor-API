@@ -109,45 +109,6 @@ export class CowriteProblemRequestDto {
 }
 
 /**
- * Request DTO for the solution-key endpoint
- * Contains comprehensive problem details for solution generation
- */
-export class GenerateSolutionKeyRequestDto {
-  @ApiProperty()
-  @IsString()
-  title!: string;
-
-  @ApiProperty()
-  @IsString()
-  description!: string;
-
-  @ApiProperty()
-  @IsString()
-  discipline!: string;
-
-  @ApiProperty()
-  @IsString()
-  statement!: string;
-
-  @ApiProperty()
-  @IsString()
-  commonMistakes!: string;
-
-  @ApiProperty()
-  @IsString()
-  additionalInformation!: string;
-
-  @ApiProperty()
-  @IsString()
-  instructorPlan!: string;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsString()
-  assumptions?: string;
-}
-
-/**
  * Request DTO for the planning-response endpoint
  * Contains problem details and student message for tutor guidance
  */
