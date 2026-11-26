@@ -61,10 +61,33 @@ PlanningPhase = Literal[
 
 
 class PlanningTutorData(TypedDict):
-    chatbotResponse: str
+    tutorResponse: str
     isPlanComplete: bool
     currentPhase: PlanningPhase
-    attemptCount: int
+
+
+class EvaluationProblem(TypedDict):
+    discipline: str
+    title: str
+    description: str
+    statement: str
+
+
+class EvaluateConversationRequest(TypedDict):
+    problem: EvaluationProblem
+    conversationHistory: list[ConversationMessage]
+
+
+class CriterionEvaluation(TypedDict):
+    level_achieved: int
+    reasoning: str
+    evidence: list[str]
+    criteria_title: str
+    criteria_number: int
+
+
+class EvaluateConversationData(TypedDict):
+    evaluation: list[CriterionEvaluation]
 
 
 class CowriteProblemResponse(TypedDict):
@@ -80,6 +103,15 @@ class PlanningTutorResponse(TypedDict):
     success: bool
     status: int
     data: NotRequired[PlanningTutorData]
+    message: NotRequired[str | list[str]]
+    statusCode: NotRequired[int]
+    error: NotRequired[str]
+
+
+class EvaluateConversationResponse(TypedDict):
+    success: bool
+    status: int
+    data: NotRequired[EvaluateConversationData]
     message: NotRequired[str | list[str]]
     statusCode: NotRequired[int]
     error: NotRequired[str]

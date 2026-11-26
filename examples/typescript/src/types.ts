@@ -54,10 +54,33 @@ export type PlanningPhase =
   | 'complete';
 
 export type PlanningTutorData = {
-  chatbotResponse: string;
+  tutorResponse: string;
   isPlanComplete: boolean;
   currentPhase: PlanningPhase;
-  attemptCount: number;
+};
+
+export type EvaluationProblem = {
+  discipline: string;
+  title: string;
+  description: string;
+  statement: string;
+};
+
+export type EvaluateConversationRequest = {
+  problem: EvaluationProblem;
+  conversationHistory: ConversationMessage[];
+};
+
+export type CriterionEvaluation = {
+  level_achieved: number;
+  reasoning: string;
+  evidence: string[];
+  criteria_title: string;
+  criteria_number: number;
+};
+
+export type EvaluateConversationData = {
+  evaluation: CriterionEvaluation[];
 };
 
 export type ApiSuccess<T> = {
@@ -78,3 +101,5 @@ export type ApiResponse<T> = ApiSuccess<T> | ApiFailure;
 
 export type CowriteProblemResponse = ApiResponse<CowriteProblemData>;
 export type PlanningTutorResponse = ApiResponse<PlanningTutorData>;
+export type EvaluateConversationResponse =
+  ApiResponse<EvaluateConversationData>;

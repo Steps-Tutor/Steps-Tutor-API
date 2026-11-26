@@ -1,9 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 
+import type { RubricMetric } from '@modules/ai/types/rubric.types';
 import { createPlanningPrompt } from '../promptTexts/chatbot/planningPrompts';
 import { createAnswerCheckingPrompt } from '../promptTexts/chatbot/answerCheckingPrompts';
 import { createReflectionPrompt } from '../promptTexts/chatbot/reflectionPrompt';
 import {
+  createCowriteProblemPrompt,
   createEvaluationWithRubricPrompt,
   createPlanningEvaluationPrompt,
 } from '../promptTexts/generativePrompts';
@@ -16,6 +18,18 @@ import {
 @Injectable()
 export class PromptsService {
   private readonly logger = new Logger(PromptsService.name);
+
+  /**
+   * Get a prompt for co-writing problem components
+   */
+  async createCowriteProblemPrompt(
+    title: string,
+    description: string,
+    discipline: string,
+    statement: string,
+  ): Promise<string> {
+    return createCowriteProblemPrompt(title, description, discipline, statement);
+  }
 
   /**
    * Get a planning prompt for problem solving guidance
@@ -113,18 +127,16 @@ export class PromptsService {
     problemTitle: string,
     problemDescription: string,
     problemStatement: string,
-    rubricString: string,
-    levelsCount: number,
-    metricsCount: number,
+    rubric: RubricMetric[],
   ): Promise<string> {
     return createEvaluationWithRubricPrompt(
       discipline,
       problemTitle,
       problemDescription,
       problemStatement,
-      rubricString,
-      levelsCount,
-      metricsCount,
+      JSON.stringify(rubric),
+      rubric[0]?.levels.length || 0,
+      rubric.length || 0,
     );
   }
 

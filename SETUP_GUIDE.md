@@ -37,9 +37,6 @@ OPENAI_MODEL_NAME=gpt-4
 
 # Server port (optional, defaults to 3000)
 PORT=3001
-
-# Frontend URL for CORS (optional)
-SITE_URL=http://localhost:3000
 ```
 
 ### 3. Start the Application

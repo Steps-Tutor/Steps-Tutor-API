@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "cowrite-problem": "tsx src/cowrite-problem.ts",
-    "planning-tutor": "tsx src/planning-tutor.ts"
+    "planning-tutor": "tsx src/planning-tutor.ts",
+    "evaluate-conversation": "tsx src/evaluate-conversation.ts"
   },
   "devDependencies": {
     "tsx": "^4.19.2",

@@ -43,9 +43,8 @@ if result.get("success"):
     data = result["data"]  # type: ignore[typeddict-item]
     print(f"Phase:     {data['currentPhase']}")
     print(f"Plan done: {data['isPlanComplete']}")
-    print(f"Attempts:  {data['attemptCount']}")
     print("\nTutor reply:")
-    print(data["chatbotResponse"])
+    print(data["tutorResponse"])
     raise SystemExit(0)
 
 print(result, file=sys.stderr)

@@ -26,9 +26,8 @@ try {
   if (result.success) {
     console.log(`Phase:     ${result.data.currentPhase}`);
     console.log(`Plan done: ${result.data.isPlanComplete}`);
-    console.log(`Attempts:  ${result.data.attemptCount}`);
     console.log('\nTutor reply:');
-    console.log(result.data.chatbotResponse);
+    console.log(result.data.tutorResponse);
     process.exit(0);
   }
 

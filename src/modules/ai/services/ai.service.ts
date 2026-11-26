@@ -12,10 +12,11 @@ import {
   Logger,
 } from '@nestjs/common';
 
-import {
-  createCowriteProblemPrompt,
-} from '../prompts/generativePrompts';
 import { PromptsService } from '@modules/prompts/services/prompts.service';
+import {
+  ConversationEvaluationResponse,
+} from '../types/ai-response.types';
+import { RubricMetric } from '../types/rubric.types';
 
 export interface CowriteProblemResponse {
   essentialConcepts: string;
@@ -27,10 +28,9 @@ export interface CowriteProblemResponse {
 }
 
 export interface PlanningChatbotResponse {
-  chatbotResponse: string;
+  tutorResponse: string;
   isPlanComplete: boolean;
   currentPhase: string;
-  attemptCount: number;
 }
 
 /**
@@ -80,7 +80,7 @@ export class AIService {
       `cowriteProblem called - title="${title}" discipline="${discipline}"`,
     );
 
-    const cowritePrompt = createCowriteProblemPrompt(
+    const cowritePrompt = await this.promptsService.createCowriteProblemPrompt(
       title,
       description,
       discipline,
@@ -216,7 +216,7 @@ export class AIService {
         parameters: {
           type: 'object',
           properties: {
-            chatbotResponse: {
+            tutorResponse: {
               type: 'string',
               description:
                 'The response from the planning chatbot to the student.',
@@ -230,17 +230,11 @@ export class AIService {
               type: 'string',
               description: 'The current phase of the problem-solving process.',
             },
-            attemptCount: {
-              type: 'number',
-              description:
-                'The number of attempts the student has made to answer the current question.',
-            },
           },
           required: [
-            'chatbotResponse',
+            'tutorResponse',
             'isPlanComplete',
             'currentPhase',
-            'attemptCount',
           ],
         },
       },
@@ -295,6 +289,121 @@ export class AIService {
     );
     throw new InternalServerErrorException(
       'No tool call response from OpenAI',
+    );
+  }
+
+  /**
+   * Evaluate a student-tutor conversation against a rubric
+   */
+  async evaluateConversationWithRubric(
+    problem: {
+      discipline: string;
+      title: string;
+      description: string;
+      statement: string;
+    },
+    conversationMessages: ChatCompletionMessageParam[],
+    rubric: RubricMetric[],
+  ): Promise<ConversationEvaluationResponse> {
+    const evaluationPrompt =
+      await this.promptsService.getEvaluationWithRubricPrompt(
+        problem.discipline,
+        problem.title,
+        problem.description,
+        problem.statement,
+        rubric,
+      );
+    const messages: ChatCompletionMessageParam[] = [
+      { role: 'system', content: evaluationPrompt },
+      ...conversationMessages,
+    ];
+    const toolFunction: ChatCompletionTool = {
+      type: 'function',
+      function: {
+        name: 'evaluate_conversation_with_rubric',
+        description: 'Evaluate a conversation based on a rubric',
+        parameters: {
+          type: 'object',
+          properties: {
+            evaluation: {
+              type: 'array',
+              description:
+                'Evaluation of the student for each rubric criterion',
+              items: {
+                type: 'object',
+                properties: {
+                  level_achieved: {
+                    type: 'number',
+                    description: 'Performance level achieved for the criterion',
+                  },
+                  reasoning: {
+                    type: 'string',
+                    description:
+                      'Brief explanation of how the student followed or deviated from the specified rubric criterion',
+                  },
+                  evidence: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    description:
+                      "Excerpts from the student's conversation supporting the evaluation",
+                  },
+                  criteria_title: {
+                    type: 'string',
+                  },
+                  criteria_number: {
+                    type: 'number',
+                  },
+                },
+                required: [
+                  'level_achieved',
+                  'reasoning',
+                  'evidence',
+                  'criteria_title',
+                  'criteria_number',
+                ],
+                additionalProperties: false,
+              },
+            },
+          },
+          required: ['evaluation'],
+          additionalProperties: false,
+        },
+      },
+    };
+
+    let response: ChatCompletion;
+    try {
+      response = await this.createChatCompletion({
+        messages,
+        model: this.configService.getOrThrow<string>('OPENAI_MODEL_NAME'),
+        tools: [toolFunction],
+        tool_choice: 'required',
+      });
+    } catch (error) {
+      this.logger.error(
+        `evaluateConversationWithRubric - OpenAI call failed: ${(error as Error)?.message}`,
+      );
+      throw error;
+    }
+
+    if (response?.choices[0]?.message?.tool_calls?.length) {
+      const toolCall = response.choices[0].message.tool_calls[0];
+      if (toolCall.type === 'function' && toolCall.function.arguments) {
+        const toolResponse = JSON.parse(
+          toolCall.function.arguments,
+        ) as ConversationEvaluationResponse;
+        this.logger.log(
+          'evaluateConversationWithRubric - successfully parsed tool response',
+        );
+        return { evaluation: toolResponse.evaluation };
+      }
+    }
+
+    this.logger.error(
+      'evaluateConversationWithRubric - no tool call in OpenAI response',
+    );
+    throw new InternalServerErrorException(
+      'No tool call response from OpenAI for conversation evaluation with rubric',
     );
   }
 }

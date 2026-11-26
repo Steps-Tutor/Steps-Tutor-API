@@ -12,9 +12,12 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 
+import { CONVERSATION_EVALUATION_RUBRIC } from './constants/conversation-evaluation-rubric.constants';
 import { AIService, CowriteProblemResponse, PlanningChatbotResponse } from './services/ai.service';
+import { ConversationEvaluationResponse } from './types/ai-response.types';
 import {
   CowriteProblemRequestDto,
+  EvaluateConversationRequestDto,
   PlanningChatbotRequestDto,
   ApiResponseDto,
 } from './dto/ai.dto';
@@ -90,15 +93,15 @@ export class AIController {
   @Post('planning-response')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Get planning chatbot response for student guidance',
+    summary: 'Get planning tutor response for student guidance',
     description: 'Provides interactive guidance to help students plan their approach to solving a problem using the Socratic method.',
   })
   @ApiBody({
     type: PlanningChatbotRequestDto,
     examples: {
       example1: {
-        summary: 'First Turn of Planning Chatbot',
-        description: 'Student initiates conversation asking for guidance',
+        summary: 'First Turn of Planning Tutor',
+        description: 'Student initiates conversation asking for guidance from the planning tutor',
         value: {
           problem: {
             id: 'prob-001',
@@ -118,8 +121,8 @@ export class AIController {
         },
       },
       example2: {
-        summary: 'Continuing Conversation',
-        description: 'Student follows up after initial guidance',
+        summary: 'Continuing Conversation with Planning Tutor',
+        description: 'Student follows up after initial guidance from the planning tutor',
         value: {
           problem: {
             id: 'prob-001',
@@ -149,7 +152,7 @@ export class AIController {
       },
       example3: {
         summary: "Real Problem Example",
-        description: "An actual problem scenario for the planning chatbot",
+        description: "An actual problem scenario for the planning tutor",
         value: {
           "problem": {
             "discipline": "Physics",
@@ -171,17 +174,16 @@ export class AIController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Successfully generated chatbot response',
+    description: 'Successfully generated planning tutor response',
     type: ApiResponseDto<PlanningChatbotResponse>,
     examples: {
       example1: {
-        summary: 'Initial guidance response',
+        summary: 'Initial guidance response from planning tutor',
         value: {
           data: {
-            chatbotResponse: 'Let\'s start by understanding what we\'re trying to find. The problem asks us to calculate the time it takes for a ball to fall 100 meters. Before we jump into calculations, can you tell me: What do we know from the problem statement? What are the given values?',
+            tutorResponse: 'Let\'s start by understanding what we\'re trying to find. The problem asks us to calculate the time it takes for a ball to fall 100 meters. Before we jump into calculations, can you tell me: What do we know from the problem statement? What are the given values?',
             isPlanComplete: false,
             currentPhase: 'understanding',
-            attemptCount: 0,
           },
           status: 200,
           success: true,
@@ -191,10 +193,9 @@ export class AIController {
         summary: 'Follow-up guidance response',
         value: {
           data: {
-            chatbotResponse: 'Excellent thinking! You\'re on the right track with the kinematic equations. From the problem, we have: initial height = 100m, initial velocity = 0 (it\'s dropped, not thrown), and acceleration = 9.8 m/s². Now, do you know which kinematic equation relates these quantities to time?',
+            tutorResponse: 'Excellent thinking! You\'re on the right track with the kinematic equations. From the problem, we have: initial height = 100m, initial velocity = 0 (it\'s dropped, not thrown), and acceleration = 9.8 m/s². Now, do you know which kinematic equation relates these quantities to time?',
             isPlanComplete: false,
             currentPhase: 'equation_selection',
-            attemptCount: 1,
           },
           status: 200,
           success: true,
@@ -218,6 +219,90 @@ export class AIController {
       request.problem,
       request.studentMessage,
       request.conversationHistory,
+    );
+  }
+
+  @Post('evaluate-conversation')
+  @ApiOperation({
+    summary: 'Evaluate a student-tutor conversation against a rubric',
+    description:
+      'Evaluates the student messages in the provided conversation against the predefined rubric and returns the level achieved, reasoning and evidence for each criterion.',
+  })
+  @ApiBody({
+    type: EvaluateConversationRequestDto,
+    examples: {
+      example1: {
+        summary: 'Evaluate a planning conversation',
+        value: {
+          problem: {
+            discipline: 'Physics',
+            title: 'Free Fall Motion',
+            description: 'A problem about objects falling under gravity',
+            statement:
+              'A ball is dropped from a height of 100 meters. Assuming no air resistance and g=9.8 m/s², calculate the time it takes to hit the ground.',
+          },
+          conversationHistory: [
+            {
+              role: 'user',
+              content: "I don't know where to start with this problem.",
+            },
+            {
+              role: 'assistant',
+              content: 'What do we know from the problem statement?',
+            },
+            {
+              role: 'user',
+              content:
+                'The height is 100 m, the initial velocity is 0 and a = 9.8 m/s².',
+            },
+          ],
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully evaluated the conversation',
+    type: ApiResponseDto<ConversationEvaluationResponse>,
+    examples: {
+      example1: {
+        summary: 'Successful response',
+        value: {
+          data: {
+            evaluation: [
+              {
+                level_achieved: 2,
+                reasoning: 'The student identified the height, initial velocity and acceleration.',
+                evidence: [
+                  'The height is 100 m, the initial velocity is 0 and a = 9.8 m/s².',
+                ],
+                criteria_title: 'Concept Identification Accuracy',
+                criteria_number: 1,
+              },
+            ],
+          },
+          status: 200,
+          success: true,
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error',
+    example: {
+      data: null,
+      status: 500,
+      success: false,
+    },
+  })
+  async evaluateConversation(
+    @Body() request: EvaluateConversationRequestDto,
+  ): Promise<ConversationEvaluationResponse> {
+    return await this.aiService.evaluateConversationWithRubric(
+      request.problem,
+      request.conversationHistory,
+      CONVERSATION_EVALUATION_RUBRIC,
     );
   }
 }
